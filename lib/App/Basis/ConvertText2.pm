@@ -5,15 +5,34 @@ App::Basis::ConvertText2
 
 =head1 SYNOPSIS
 
-TO be used in conjuction with the ct2 script that is part of this distribution.
+TO be used in conjuction with the supplied ct2 script, which is part of this distribution.
 Not really to be used on its own.
 
 =head1 DESCRIPTION
 
-Convert markdown text into other formats. Uses many different plugins together
-perform actions like pandoc code-blocks do.
+This is a perl module and a script that makes use of %TITLE%
 
-Requires a number of extra programs to work,
+This is a wrapper for [pandoc] implementing extra fenced code-blocks to allow the
+creation of charts and graphs etc.
+Documents may be created a variety of formats. If you want to create nice PDFs
+then it can use [PrinceXML] to generate great looking PDFs or you can use [wkhtmltopdf] to create PDFs that are almost as good, the default is to use pandoc which, for me, does not work as well.
+
+HTML templates can also be used to control the layout of your documents.
+
+The fenced code block handlers are implemented as plugins and it is a simple process to add new ones.
+
+There are plugins to handle
+
+    * ditaa
+    * mscgen
+    * graphviz
+    * uml
+    * gnuplot
+    * gle
+    * sparklines
+    * charts
+    * barcodes and qrcodes
+    * and many others
 
 See 
 https://github.com/27escape/App-Basis-ConvertText2/blob/master/README.md
@@ -24,6 +43,10 @@ for more information.
 Consider adding plugins for http://blockdiag.com/en/index.html, gnuplot and gle 
 http://glx.sourceforge.net/
 
+https://metacpan.org/pod/Chart::Strip
+
+https://metacpan.org/pod/Chart::Clicker
+
 =head1 Public methods
 
 =over 4
@@ -33,7 +56,7 @@ http://glx.sourceforge.net/
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2;
-$App::Basis::ConvertText2::VERSION = '0.2';
+$App::Basis::ConvertText2::VERSION = '0.3';
 use 5.10.0;
 use strict;
 use warnings;
@@ -45,7 +68,6 @@ use Path::Tiny;
 use Digest::MD5 qw(md5_hex);
 use Encode qw(encode_utf8);
 use Text::Markdown qw(markdown);
-
 use GD;
 use MIME::Base64;
 use Furl;
@@ -64,6 +86,7 @@ use App::Basis::ConvertText2::Support;
 use constant CONTENTS => '_CONTENTS_';
 use constant PANDOC   => 'pandoc';
 use constant PRINCE   => 'prince';
+use constant WKHTML   => 'wkhtmltopdf';
 
 my %valid_tags;
 
@@ -72,7 +95,8 @@ my $TITLE = "%TITLE%";
 
 # ----------------------------------------------------------------------------
 
-has 'name' => ( is => 'ro', );
+has 'name'    => ( is => 'ro', );
+has 'basedir' => ( is => 'ro', );
 
 has 'use_cache' => ( is => 'rw', default => sub { 0; } );
 
@@ -148,6 +172,7 @@ Create a new instance of a of a data formating object
 
 B<Parameters>  passed in a HASH
     name        - name of this formatting action - required
+    basedir     - root directory of document being processed
     cache_dir   - place to store cache files - optional
     use_cache   - decide if you want to use a cache or not
     template    - HTML template to use, must contain %_CONTENTS_%
@@ -421,13 +446,25 @@ sub _parse_lines {
     return if ( !$lines );
 
     my ( $class, $block, $content, $attributes );
-    my $buildline;
+    my ( $buildline, $simple );
     try {
         foreach my $line ( @{$lines} ) {
             $count++;
 
             # header lines may have been removed
             next if ( !defined $line );
+
+            if ( defined $simple ) {
+                if ( $line =~ /^~{4,}\s?$/ ) {
+                    $self->_append_output("~~~~\n$simple\n~~~~\n");
+                    $simple = undef;
+                }
+                else {
+                    $simple .= "$line\n";
+                }
+
+                next;
+            }
 
             # we may need to add successive lines together to get a completed fenced code block
             if ( !$block && $buildline ) {
@@ -444,6 +481,12 @@ sub _parse_lines {
                 }
             }
 
+            # a simple block does not have an identifying {.tag}
+            if ( $line =~ /^~{4,}\s?$/ && !$block ) {
+                $simple = "";
+                next;
+            }
+
             if ( $line =~ /^~{4,}/ ) {
 
                 # does the fenced line wrap before its ended
@@ -454,7 +497,7 @@ sub _parse_lines {
                     next;
                 }
 
-                if ( $line =~ /\{(.*?)\.(\w+)\s?(.*?)\}\s?$/ ) {
+                if ( $line =~ /\{(.*?)\.(\w+)\s*(.*?)\}\s*$/ ) {
                     $class      = $1;
                     $block      = lc($2);
                     $attributes = $3;
@@ -467,13 +510,27 @@ sub _parse_lines {
                     my $params = _extract_args($attributes);
 
                     # must have reached the end of a block
-                    if ( $valid_tags{$block} ) {
+                    if ( $block && $valid_tags{$block} ) {
                         chomp $content;
                         $self->_call_function( $block, $params, $content, $count );
                     }
                     else {
-                        # put it back
-                        $self->_append_output("~~~~{ $class .$block $attributes}\n$content\n~~~~\n");
+                        if ( !$block ) {
+
+                            # put it back
+                            $content ||= "";
+                            $self->_append_output("~~~~\n$content\n~~~~\n");
+
+                        }
+                        else {
+                            $content    ||= "";
+                            $attributes ||= "";
+                            $block      ||= "";
+
+                            # put it back
+                            $self->_append_output("~~~~{ $class .$block $attributes}\n$content\n~~~~\n");
+
+                        }
                     }
                     $content    = "";
                     $attributes = "";
@@ -514,18 +571,23 @@ sub _rewrite_imgsrc {
         $id .= ".$ext";
 
         # this is what it will be named in the cache
-        $cachefile = cachefile( $self->cache_dir,$id);
+        $cachefile = cachefile( $self->cache_dir, $id );
 
         # not in the cache so we must fetch it and store it local to the cache
         # if we are a local file
         if ( $img !~ m|^\w+://| || $img =~ m|^file://| ) {
             $img =~ s|^file://||;
             $img = fix_filename($img);
-            my $status;
+
+            if ( $img !~ m|/| ) {
+
+                # if file is relative, then we need to add the basedir
+                $img = $self->basedir . "/$img";
+            }
 
             # copy it to the cache location
             try {
-                $status = path($img)->copy($cachefile);
+                path($img)->copy($cachefile);
             }
             catch {
                 debug( "ERROR", "failed to copy $img to $cachefile" );
@@ -713,10 +775,11 @@ sub _pandoc_format {
 #  parameters
 #     file    - file to re-convert
 #     format  - format to convert to
-#     prince  - use prince rather than pandoc to convert to PDF
+#     pdfconvertor  - use prince/wkhtmltopdf rather than pandoc to convert to PDF
 
 sub _convert_file {
-    my ( $file, $format, $prince ) = @_;
+    my $self = shift ;
+    my ( $file, $format, $pdfconvertor ) = @_;
 
     # we work on the is that pandoc should be in your PATH
     my $fmt_str = $format;
@@ -727,18 +790,43 @@ sub _convert_file {
 
     # we can use prince to do PDF conversion, its faster and better, but not free for commercial use
     # you would have to ignore the P symbol on the resultant document
-    if ( $format =~ /pdf/i && $prince ) {
-        my $cmd = PRINCE . " $file -o $outfile";
-        my ( $out, $err );
-        try {
-            # say "$cmd" ;
-            ( $exit, $out, $err ) = run_cmd($cmd);
+    if ( $format =~ /pdf/i && $pdfconvertor ) {
+        my $cmd;
+
+        if ( $pdfconvertor =~ /^prince/i ) {
+            $cmd = PRINCE . " " ;
+            $cmd.= "--pdf-title='$self->{replace}->{TITLE}' " if ($self->{replace}->{TITLE}) ;
+            $cmd.= "--pdf-subject='$self->{replace}->{SUBJECT}' " if ($self->{replace}->{SUBJECT}) ;
+            $cmd.= "--pdf-creator='$self->{replace}->{AUTHOR}' " if ($self->{replace}->{AUTHOR}) ;
+            $cmd.= "--pdf-keywords='$self->{replace}->{KEYWORDS}' " if ($self->{replace}->{KEYWORDS}) ;
+            $cmd .= " --media=print $file -o $outfile";
         }
-        catch {
-            $err  = "run_cmd($cmd) died - $_";
-            $exit = 1;
-        };
-        debug( "ERROR", $err ) if ($err);    # only debug if return code is not 0
+        elsif ( $pdfconvertor =~ /^wkhtmltopdf/i ) {
+            $cmd = WKHTML . " -q --print-media-type " ;
+            $cmd.= "--title '$self->{replace}->{TITLE}' " if ($self->{replace}->{TITLE}) ;
+            # do we want to specify the size
+            $cmd .= "--page-size $self->{replace}->{PAGE_SIZE} " if( $self->{replace}->{PAGE_SIZE}) ;
+            $cmd .= "$file $outfile";
+        }
+        else {
+            warn "Unknown PDF converter ($pdfconvertor), using pandoc";
+
+            # otherwise lets use pandoc to create the file in the other formats
+            $exit = _pandoc_format( $file, $outfile );
+        }
+        if ($cmd) {
+            my ( $out, $err );
+            try {
+                # say "$cmd" ;
+                ( $exit, $out, $err ) = run_cmd($cmd);
+            }
+            catch {
+                $err  = "run_cmd($cmd) died - $_";
+                $exit = 1;
+            };
+
+            debug( "ERROR", $err ) if ($err);    # only debug if return code is not 0
+        }
     }
     else {
         # otherwise lets use pandoc to create the file in the other formats
@@ -875,14 +963,14 @@ save the created html to a named file
 
 B<Parameters>  
     filename    filename to store/convert stored HTML into
-    prince      flag to indicate that we should use prince to create PDF
+    pdfconvertor   indicate that we should use prince or wkhtmltopdf to create PDF
 
 =cut
 
 sub save_to_file {
     state $counter = 0;
     my $self = shift;
-    my ( $filename, $prince ) = @_;
+    my ( $filename, $pdfconvertor ) = @_;
     my ($format) = ( $filename =~ /\.(\w+)$/ );    # get last thing after a '.'
     if ( !$format ) {
         warn "Could not determine outpout file format, using PDF";
@@ -914,8 +1002,11 @@ sub save_to_file {
     # if the marked-up file is more recent than the converted one
     # then we need to convert it again
     if ( $format !~ /html/i ) {
-        if ( !-f $outfile || ( ( stat($cf) )[9] > ( stat($outfile) )[9] ) ) {
-            $outfile = _convert_file( $cf, $format, $prince );
+
+        # as we can generate PDF using a number of convertors we should
+        # always regenerate PDF output incase the convertor used is different
+        if ( !-f $outfile || $format =~ /pdf/i || ( ( stat($cf) )[9] > ( stat($outfile) )[9] ) ) {
+            $outfile = $self->_convert_file( $cf, $format, $pdfconvertor );
 
             # if we failed to convert, then clear the filename
             if ( !$outfile || !-f $outfile ) {

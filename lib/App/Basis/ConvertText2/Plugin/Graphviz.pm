@@ -46,7 +46,7 @@ convert a graphviz text string into a PNG, requires dot program from http://grap
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Graphviz;
-$App::Basis::ConvertText2::Plugin::Graphviz::VERSION = '0.2';
+$App::Basis::ConvertText2::Plugin::Graphviz::VERSION = '0.3';
 use 5.10.0;
 use strict;
 use warnings;

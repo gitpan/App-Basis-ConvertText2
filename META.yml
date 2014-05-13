@@ -1,5 +1,5 @@
 ---
-abstract: 'Text into other formats, eg my extended markdown to PDF'
+abstract: 'Wrapper for pandoc, lots of plugins for fenced code blocks.'
 author:
   - 'Kevin Mulholland <moodfarm@cpan.org>'
 build_requires:
@@ -55,4 +55,4 @@ requires:
   warnings: 0
 resources:
   repository: git://github.com/27escape/App-Basis-ConvertText2.git
-version: 0.2
+version: 0.3

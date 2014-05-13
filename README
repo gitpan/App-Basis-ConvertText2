@@ -1,9 +1,9 @@
 
 
 This archive contains the distribution App-Basis-ConvertText2,
-version 0.2:
+version 0.3:
 
-  Text into other formats, eg my extended markdown to PDF
+  Wrapper for pandoc, lots of plugins for fenced code blocks.
 
 This software is copyright (c) 2013 by Kevin Mulholland.
 

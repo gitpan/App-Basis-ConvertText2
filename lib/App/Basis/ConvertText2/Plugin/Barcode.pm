@@ -21,7 +21,7 @@ convert a text string into a QRcode PNG, requires qrencode program
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Barcode;
-$App::Basis::ConvertText2::Plugin::Barcode::VERSION = '0.2';
+$App::Basis::ConvertText2::Plugin::Barcode::VERSION = '0.3';
 use 5.10.0;
 use strict;
 use warnings;

@@ -29,7 +29,7 @@ from https://github.com/27escape/bin/blob/master/uml and http://plantuml.sourcef
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Uml;
-$App::Basis::ConvertText2::Plugin::Uml::VERSION = '0.2';
+$App::Basis::ConvertText2::Plugin::Uml::VERSION = '0.3';
 use 5.10.0;
 use strict;
 use warnings;

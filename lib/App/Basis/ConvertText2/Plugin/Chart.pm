@@ -31,7 +31,7 @@ Convert comma separated text strings into charts image PNG
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Chart;
-$App::Basis::ConvertText2::Plugin::Chart::VERSION = '0.2';
+$App::Basis::ConvertText2::Plugin::Chart::VERSION = '0.3';
 use 5.10.0;
 use strict;
 use warnings;
@@ -236,12 +236,13 @@ sub process {
             $chart->set_y_axis_font(gdMediumBoldFont);
             $chart->set_values_font(gdMediumBoldFont);
         }
+
+        my ( $stdout, $stderr, $exit ) = capture {
+            my $gd = $chart->plot( \@data );
+            path($filename)->spew_raw( $gd->png ) if ($$gd);
+        };
     }
 
-    my ( $stdout, $stderr, $exit ) = capture {
-        my $gd = $chart->plot( \@data );
-        path($filename)->spew_raw( $gd->png ) if ($$gd);
-    };
     my $out;
     if ( -f $filename ) {
 

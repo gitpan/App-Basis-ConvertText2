@@ -37,7 +37,7 @@ convert a mscgen text string into a PNG, requires mscgen program from http://www
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Mscgen;
-$App::Basis::ConvertText2::Plugin::Mscgen::VERSION = '0.2';
+$App::Basis::ConvertText2::Plugin::Mscgen::VERSION = '0.3';
 use 5.10.0;
 use strict;
 use warnings;

@@ -55,7 +55,7 @@ Various simple text transformations
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Text;
-$App::Basis::ConvertText2::Plugin::Text::VERSION = '0.2';
+$App::Basis::ConvertText2::Plugin::Text::VERSION = '0.3';
 use 5.10.0;
 use strict;
 use warnings;
@@ -85,6 +85,10 @@ Convert a YAML block into a JSON block
 sub yamlasjson {
     my $self = shift;
     my ( $tag, $content, $params, $cachedir ) = @_;
+
+    # make sure we have an extra linefeed at the end to make sure
+    # YAML is correct
+    $content .= "\n\n" ;
 
     $content =~ s/~~~~{\.yaml}//gsm;
     $content =~ s/~~~~//gsm;
