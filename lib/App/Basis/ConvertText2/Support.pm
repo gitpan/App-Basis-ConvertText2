@@ -13,7 +13,7 @@ Support functions for L<App::Basis::ConvertText2> and its plugins
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Support;
-$App::Basis::ConvertText2::Support::VERSION = '0.3';
+$App::Basis::ConvertText2::Support::VERSION = '0.4';
 use 5.10.0;
 use strict;
 use warnings;

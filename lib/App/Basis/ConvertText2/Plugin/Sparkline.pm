@@ -19,7 +19,7 @@ Convert a text string of comma separated numbers into a sparkline image PNG
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Sparkline;
-$App::Basis::ConvertText2::Plugin::Sparkline::VERSION = '0.3';
+$App::Basis::ConvertText2::Plugin::Sparkline::VERSION = '0.4';
 use 5.10.0;
 use strict;
 use warnings;

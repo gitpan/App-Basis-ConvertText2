@@ -55,7 +55,7 @@ Various simple text transformations
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Text;
-$App::Basis::ConvertText2::Plugin::Text::VERSION = '0.3';
+$App::Basis::ConvertText2::Plugin::Text::VERSION = '0.4';
 use 5.10.0;
 use strict;
 use warnings;

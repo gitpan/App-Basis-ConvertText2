@@ -55,4 +55,4 @@ requires:
   warnings: 0
 resources:
   repository: git://github.com/27escape/App-Basis-ConvertText2.git
-version: 0.3
+version: 0.4

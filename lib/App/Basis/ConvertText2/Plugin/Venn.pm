@@ -26,7 +26,7 @@ Convert a text string of comma separated numbers into a Venn diagran image PNG
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Venn;
-$App::Basis::ConvertText2::Plugin::Venn::VERSION = '0.3';
+$App::Basis::ConvertText2::Plugin::Venn::VERSION = '0.4';
 use 5.10.0;
 use strict;
 use warnings;

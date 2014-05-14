@@ -29,7 +29,7 @@ convert a gle/glx text string into a PNG, requires gle program http://glx.source
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Gle;
-$App::Basis::ConvertText2::Plugin::Gle::VERSION = '0.3';
+$App::Basis::ConvertText2::Plugin::Gle::VERSION = '0.4';
 use 5.10.0;
 use strict;
 use warnings;

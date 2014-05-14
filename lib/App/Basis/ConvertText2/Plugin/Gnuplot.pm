@@ -36,7 +36,7 @@ convert a gnuplot text string into a PNG, requires gnuplot program http://gnuplo
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Gnuplot;
-$App::Basis::ConvertText2::Plugin::Gnuplot::VERSION = '0.3';
+$App::Basis::ConvertText2::Plugin::Gnuplot::VERSION = '0.4';
 use 5.10.0;
 use strict;
 use warnings;

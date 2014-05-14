@@ -31,7 +31,7 @@ Convert comma separated text strings into charts image PNG
 # ----------------------------------------------------------------------------
 
 package App::Basis::ConvertText2::Plugin::Chart;
-$App::Basis::ConvertText2::Plugin::Chart::VERSION = '0.3';
+$App::Basis::ConvertText2::Plugin::Chart::VERSION = '0.4';
 use 5.10.0;
 use strict;
 use warnings;
